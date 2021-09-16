@@ -11,7 +11,6 @@ contract SimpleBank {
     /* State variables
      */
     
-    
     // Fill in the visibility keyword. 
     // Hint: We want to protect our users balance from other contracts
     mapping (address => uint) private balances ;
@@ -24,23 +23,23 @@ contract SimpleBank {
     // Let's make sure everyone knows who owns the bank, yes, fill in the
     // appropriate visilibility keyword
     address public owner = msg.sender;
+
     
     /* Events - publicize actions to external listeners
      */
     
-    // Add an argument for this event, an accountAddress
-    event LogEnrolled(address _actAddress);
+    // Add an argument for this event, an actAddress
+    event LogEnrolled(address actAddress);
 
-    // Add 2 arguments for this event, an accountAddress and an amount
-    event LogDepositMade(address _actAddress, uint _amount);
+    // Add 2 arguments for this event, an actAddress and an amount
+    event LogDepositMade(address actAddress, uint amount);
 
     // Create an event called LogWithdrawal
-    // Hint: it should take 3 arguments: an accountAddress, withdrawAmount and a newBalance 
-    event LogWithdrawal(address _actAddress, uint _amount, uint _newBalance);
+    // Hint: it should take 3 arguments: an actAddress, withdrawAmount and a newBalance 
+    event LogWithdrawal(address actAddress, uint withdrawAmount, uint newBalance);
 
     /* Functions
      */
-     
 
     // Fallback function - Called if other functions don't match call or
     // sent ether without data
@@ -58,6 +57,7 @@ contract SimpleBank {
       //    allows function to run locally/off blockchain
       // 2. Get the balance of the sender of this transaction
       return balances[msg.sender];
+
     }
 
     /// @notice Enroll a customer with the bank
@@ -65,44 +65,74 @@ contract SimpleBank {
     // Emit the appropriate event
     function enroll() public returns (bool){
       // 1. enroll of the sender of this transaction
-        enrolled[msg.sender] = true;
-        emit LogEnrolled(msg.sender);
-        return enrolled[msg.sender];
+      enrolled[msg.sender] = true;
+
+      emit LogEnrolled(msg.sender);
+
+      return enrolled[msg.sender];
     }
+
+    
 
     /// @notice Deposit ether into bank
     /// @return The balance of the user after the deposit is made
-    function deposit() public payable returns (uint) {
+
+    modifier onlyEnrolled {
+      require(enrolled[msg.sender] == true);
+      _;
+    }
+    function deposit() public payable onlyEnrolled returns (uint) {
       // 1. Add the appropriate keyword so that this function can receive ether
+    
       // 2. Users should be enrolled before they can make deposits
+      
+        
       // 3. Add the amount to the user's balance. Hint: the amount can be
       //    accessed from of the global variable `msg`
+      
+
       // 4. Emit the appropriate event associated with this function
+        
       // 5. return the balance of sndr of this transaction
-      require(enrolled[msg.sender] );
+
       balances[msg.sender] += msg.value;
-      emit LogDepositMade(msg.sender , msg.value);
+
+      emit LogDepositMade(msg.sender, msg.value);
+
       return balances[msg.sender];
+
+      
     }
 
     /// @notice Withdraw ether from bank
     /// @dev This does not return any excess ether sent to it
     /// @param withdrawAmount amount you want to withdraw
     /// @return The balance remaining for the user
-    function withdraw(uint withdrawAmount) public returns (uint) {
+
+    modifier enoughFunds(uint withdrawAmount) {
+      require(withdrawAmount <= balances[msg.sender]);
+      _;
+    }
+    function withdraw(uint withdrawAmount) public payable onlyEnrolled enoughFunds(withdrawAmount) returns (uint) {
       // If the sender's balance is at least the amount they want to withdraw,
       // Subtract the amount from the sender's balance, and try to send that amount of ether
       // to the user attempting to withdraw. 
       // return the user's balance.
 
-      // 1. Use a require expression to guard/ensure sender has enough fund
+      // 1. Use a require expression to guard/ensure sender has enough funds
+
       // 2. Transfer Eth to the sender and decrement the withdrawal amount from
       //    sender's balance
+
       // 3. Emit the appropriate event for this message
-      require(balances[msg.sender]>= withdrawAmount);
+         
       balances[msg.sender] -= withdrawAmount;
-      emit LogWithdrawal(msg.sender, withdrawAmount, balances[msg.sender]);
+
       msg.sender.transfer(withdrawAmount);
+      
+      emit LogWithdrawal(msg.sender, withdrawAmount, balances[msg.sender]);
+
       return balances[msg.sender];
+      
     }
 }
